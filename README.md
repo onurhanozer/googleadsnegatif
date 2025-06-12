@@ -6,7 +6,8 @@ This repository contains a single Google Ads Script (`negatif.js`) that automati
 1. Open your Google Ads account and navigate to **Tools & Settings > Bulk Actions > Scripts**.
 2. Create a new script and paste the contents of `negatif.js`.
 3. Review the configuration constants at the top of the `main` function and adjust if necessary.
-4. Authorize and run the script, or schedule it to run periodically.
+4. Optional: set `DEBUG_AGGREGATION` to `true` to log a check of term totals.
+5. Authorize and run the script, or schedule it to run periodically.
 
 The script is case-sensitive; the terms "iphone" and "iPhone" are treated as different queries. It now looks at both exact matches and their close variants. A shared negative keyword list named `Script Liste` is created or replaced each run.
 

@@ -26,6 +26,7 @@ function main() {
 
   const EMAIL_TO      = 'onurhanozer@gmail.com';
   const TEST_MODE     = false;
+  const DEBUG_AGGREGATION = false; // Veri birleştirme kontrolü
   const NEG_LIST_NAME = 'Script Liste';
 
   Logger.log('=== GELİŞMİŞ VERİMSİZLİK ANALİZİ BAŞLADI ===');
@@ -33,6 +34,10 @@ function main() {
   Logger.log('MOD: BÜYÜK/KÜÇÜK HARFE DUYARLI - Aynı kelimeler farklı yazımlarıyla ayrı analiz edilecek');
 
   const data = collectEnhancedData(DAYS_BACK, SALES_CONV_1, SALES_CONV_2, WHATSAPP_CONV);
+
+  if (DEBUG_AGGREGATION) {
+    validateAggregation(data);
+  }
   
   const analysis = performAdvancedAnalysis(data, {
     minCost: MIN_COST,
@@ -493,4 +498,26 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
   }
   
   Logger.log('Rapor hazırlandı. CASE-SENSITIVE - Verimsiz terim sayısı: ' + analysis.wastefulTerms.length);
+}
+
+/* ---------- Toplamları doğrulama (isteğe bağlı) ---------- */
+function validateAggregation(data) {
+  let allOk = true;
+  for (const termKey in data) {
+    const r = data[termKey];
+    let sumClicks = 0, sumCost = 0, sumImpr = 0;
+    for (const day in r.dailyStats) {
+      const d = r.dailyStats[day];
+      sumClicks += d.clicks;
+      sumCost += d.cost;
+      sumImpr += d.impressions;
+    }
+    if (sumClicks !== r.clicks || sumImpr !== r.impressions || Math.abs(sumCost - r.cost) > 0.01) {
+      Logger.log('[DEBUG] Toplam uyumsuz: ' + termKey + ' C:' + r.clicks + '/' + sumClicks + ' I:' + r.impressions + '/' + sumImpr + ' Cost:' + r.cost.toFixed(2) + '/' + sumCost.toFixed(2));
+      allOk = false;
+    }
+  }
+  if (allOk) {
+    Logger.log('[DEBUG] Günlük veriler ile toplamlar uyumlu.');
+  }
 }
