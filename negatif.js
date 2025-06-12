@@ -7,34 +7,34 @@
 function main() {
 
   /* ==== GENEL AYARLAR ==== */
-  var DAYS_BACK              = 60;
-  var MIN_COST               = 50.0;      // ₺ (daha düşük eşik)
-  var MIN_CLICKS             = 10;        // Daha düşük eşik
-  var WHATSAPP_TO_SALE_RATIO = 10;        // 10 WA ≈ 1 satış
-  var MAX_CPA                = 400.0;     // ₺
+  const DAYS_BACK              = 60;
+  const MIN_COST               = 50.0;      // ₺ (daha düşük eşik)
+  const MIN_CLICKS             = 10;        // Daha düşük eşik
+  const WHATSAPP_TO_SALE_RATIO = 10;        // 10 WA ≈ 1 satış
+  const MAX_CPA                = 400.0;     // ₺
   
   // Verimsizlik kriterleri
-  var MIN_SIGNIFICANCE_DAYS  = 14;        // En az 14 gün aktif
-  var HIGH_COST_THRESHOLD    = 200.0;     // ₺200+ harcama = yüksek risk
-  var ZERO_CONV_MIN_COST     = 80.0;      // Hiç dönüşümü olmayan minimum maliyet
-  var BAD_CTR_THRESHOLD      = 0.005;     // %0.5'den düşük CTR
-  var HIGH_CPC_MULTIPLIER    = 5.0;       // Ortalama CPC'nin 5 katı
+  const MIN_SIGNIFICANCE_DAYS  = 14;        // En az 14 gün aktif
+  const HIGH_COST_THRESHOLD    = 200.0;     // ₺200+ harcama = yüksek risk
+  const ZERO_CONV_MIN_COST     = 80.0;      // Hiç dönüşümü olmayan minimum maliyet
+  const BAD_CTR_THRESHOLD      = 0.005;     // %0.5'den düşük CTR
+  const HIGH_CPC_MULTIPLIER    = 5.0;       // Ortalama CPC'nin 5 katı
 
-  var SALES_CONV_1  = 'Google Shopping App Purchase';
-  var SALES_CONV_2  = 'Purchase - Enhanced - 3';
-  var WHATSAPP_CONV = 'Whatsapp Click';
+  const SALES_CONV_1  = 'Google Shopping App Purchase';
+  const SALES_CONV_2  = 'Purchase - Enhanced - 3';
+  const WHATSAPP_CONV = 'Whatsapp Click';
 
-  var EMAIL_TO      = 'onurhanozer@gmail.com';
-  var TEST_MODE     = false;
-  var NEG_LIST_NAME = 'Script Liste';
+  const EMAIL_TO      = 'onurhanozer@gmail.com';
+  const TEST_MODE     = false;
+  const NEG_LIST_NAME = 'Script Liste';
 
   Logger.log('=== GELİŞMİŞ VERİMSİZLİK ANALİZİ BAŞLADI ===');
   Logger.log('Test Modu: ' + (TEST_MODE ? 'AÇIK' : 'KAPALI'));
   Logger.log('MOD: BÜYÜK/KÜÇÜK HARFE DUYARLI - Aynı kelimeler farklı yazımlarıyla ayrı analiz edilecek');
 
-  var data = collectEnhancedData(DAYS_BACK, SALES_CONV_1, SALES_CONV_2, WHATSAPP_CONV);
+  const data = collectEnhancedData(DAYS_BACK, SALES_CONV_1, SALES_CONV_2, WHATSAPP_CONV);
   
-  var analysis = performAdvancedAnalysis(data, {
+  const analysis = performAdvancedAnalysis(data, {
     minCost: MIN_COST,
     minClicks: MIN_CLICKS,
     whatsappRatio: WHATSAPP_TO_SALE_RATIO,
@@ -46,7 +46,7 @@ function main() {
     highCPCMultiplier: HIGH_CPC_MULTIPLIER
   });
 
-  var sync = {added:0, removed:0};
+  let sync = {added:0, removed:0};
   if (!TEST_MODE && analysis.wastefulTerms.length > 0){
     sync = rebuildSharedNegList(analysis.wastefulTerms, NEG_LIST_NAME);
   }
@@ -56,17 +56,16 @@ function main() {
 
 /* ---------- Gelişmiş veri toplama (CASE-SENSITIVE) ---------- */
 function collectEnhancedData(daysBack, conv1, conv2, waConv) {
-  var data = {};
-  var dailyData = {}; // Günlük veriler için
-  var end = new Date();
-  var start = new Date(end); 
+  const data = {};
+  const end = new Date();
+  const start = new Date(end);
   start.setDate(start.getDate() - daysBack);
 
-  var s = Utilities.formatDate(start, 'UTC', 'yyyy-MM-dd');
-  var e = Utilities.formatDate(end, 'UTC', 'yyyy-MM-dd');
+  const s = Utilities.formatDate(start, 'UTC', 'yyyy-MM-dd');
+  const e = Utilities.formatDate(end, 'UTC', 'yyyy-MM-dd');
 
   /* 1) Günlük detaylı metrikler */
-  var q1 = `
+  const q1 = `
     SELECT search_term_view.search_term,
            segments.search_term_match_type,
            segments.date,
@@ -78,16 +77,16 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
       AND  segments.search_term_match_type = 'EXACT'
       AND  metrics.impressions > 0`;
 
-  var it1 = AdsApp.report(q1).rows();
+  const it1 = AdsApp.report(q1).rows();
   while (it1.hasNext()) {
-    var r = it1.next();
-    var term = r['search_term_view.search_term'];
-    var date = r['segments.date'];
+    const r = it1.next();
+    const term = r['search_term_view.search_term'];
+    const date = r['segments.date'];
     
     if (!term || term.length < 2) continue;
 
     // BÜYÜK/KÜÇÜK HARFE DUYARLI - Terimi olduğu gibi kullan
-    var termKey = term; // Artık normalize etmiyoruz, tam halini key olarak kullanıyoruz
+    const termKey = term; // Artık normalize etmiyoruz, tam halini key olarak kullanıyoruz
 
     if (!data[termKey]) {
       data[termKey] = {
@@ -98,9 +97,9 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
       };
     }
 
-    var clicks = +r['metrics.clicks'] || 0;
-    var cost = (+r['metrics.cost_micros'] || 0) / 1e6;
-    var impressions = +r['metrics.impressions'] || 0;
+    const clicks = +r['metrics.clicks'] || 0;
+    const cost = (+r['metrics.cost_micros'] || 0) / 1e6;
+    const impressions = +r['metrics.impressions'] || 0;
 
     data[termKey].clicks += clicks;
     data[termKey].cost += cost;
@@ -124,7 +123,7 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
   }
 
   /* 2) Dönüşüm verileri */
-  var q2 = `
+  const q2 = `
     SELECT search_term_view.search_term,
            segments.search_term_match_type,
            segments.conversion_action_name,
@@ -135,19 +134,19 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
       AND  segments.search_term_match_type = 'EXACT'
       AND  metrics.all_conversions > 0`;
 
-  var it2 = AdsApp.report(q2).rows();
+  const it2 = AdsApp.report(q2).rows();
   while (it2.hasNext()) {
-    var r = it2.next();
-    var term = r['search_term_view.search_term'];
+    const r = it2.next();
+    const term = r['search_term_view.search_term'];
     
     // BÜYÜK/KÜÇÜK HARFE DUYARLI - Terimi olduğu gibi kullan
-    var termKey = term;
+    const termKey = term;
     
     if (!data[termKey]) continue;
 
-    var name = r['segments.conversion_action_name'];
-    var conversions = +r['metrics.all_conversions'] || 0;
-    var value = +r['metrics.conversions_value'] || 0;
+    const name = r['segments.conversion_action_name'];
+    const conversions = +r['metrics.all_conversions'] || 0;
+    const value = +r['metrics.conversions_value'] || 0;
 
     if (name === conv1 || name === conv2) {
       data[termKey].totalSales += conversions;
@@ -162,17 +161,17 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
 
 /* ---------- Gelişmiş performans analizi (CASE-SENSITIVE) ---------- */
 function performAdvancedAnalysis(data, config) {
-  var wastefulTerms = [];
-  var successfulTerms = [];
-  var suspiciousTerms = [];
+  const wastefulTerms = [];
+  const successfulTerms = [];
+  const suspiciousTerms = [];
   
-  var totalCost = 0, totalSales = 0, totalWA = 0, totalClicks = 0, totalImpressions = 0;
-  var avgCPC = 0, avgCTR = 0;
+  let totalCost = 0, totalSales = 0, totalWA = 0, totalClicks = 0, totalImpressions = 0;
+  let avgCPC = 0, avgCTR = 0;
 
   // Genel ortalamalar için ilk geçiş
-  var termCount = 0;
-  for (var term in data) {
-    var r = data[term];
+  let termCount = 0;
+  for (const term in data) {
+    const r = data[term];
     totalCost += r.cost;
     totalSales += r.totalSales;
     totalWA += r.wa;
@@ -185,19 +184,19 @@ function performAdvancedAnalysis(data, config) {
   avgCTR = totalImpressions > 0 ? totalClicks / totalImpressions : 0;
 
   // Detaylı analiz - HER KELİME EŞİT MUAMELE (CASE-SENSITIVE)
-  for (var termKey in data) {
-    var r = data[termKey];
-    var activeDays = r.activeDays.size;
-    var ctr = r.impressions > 0 ? r.clicks / r.impressions : 0;
-    var cpc = r.clicks > 0 ? r.cost / r.clicks : 0;
+  for (const termKey in data) {
+    const r = data[termKey];
+    const activeDays = r.activeDays.size;
+    const ctr = r.impressions > 0 ? r.clicks / r.impressions : 0;
+    const cpc = r.clicks > 0 ? r.cost / r.clicks : 0;
     
-    var totalValue = r.totalSales + (r.wa / config.whatsappRatio);
-    var cpa = totalValue > 0 ? r.cost / totalValue : null;
-    var roas = (r.salesValue || 0) > 0 ? (r.salesValue || 0) / r.cost : 0;
+    const totalValue = r.totalSales + (r.wa / config.whatsappRatio);
+    const cpa = totalValue > 0 ? r.cost / totalValue : null;
+    const roas = (r.salesValue || 0) > 0 ? (r.salesValue || 0) / r.cost : 0;
 
     // Verimsizlik kriterleri - HER KELİME İÇİN AYNI
-    var reasons = [];
-    var riskLevel = 'LOW';
+    const reasons = [];
+    let riskLevel = 'LOW';
     
     // Temel filtreler
     if (r.cost < config.minCost && r.clicks < config.minClicks) continue;
@@ -241,7 +240,7 @@ function performAdvancedAnalysis(data, config) {
 
     // Sınıflandırma
     if (reasons.length > 0) {
-      var termData = {
+      const termData = {
         term: r.originalTerm, // Orijinal terimi göster (case-sensitive)
         cost: r.cost,
         clicks: r.clicks,
@@ -281,7 +280,7 @@ function performAdvancedAnalysis(data, config) {
   suspiciousTerms.sort((a, b) => b.cost - a.cost);
   successfulTerms.sort((a, b) => b.totalValue - a.totalValue);
 
-  var wastefulCost = wastefulTerms.reduce((sum, t) => sum + t.cost, 0);
+  const wastefulCost = wastefulTerms.reduce((sum, t) => sum + t.cost, 0);
 
   return {
     wastefulTerms: wastefulTerms,
@@ -305,7 +304,7 @@ function performAdvancedAnalysis(data, config) {
 
 /* ---------- Öncelik hesaplama (basitleştirilmiş) ---------- */
 function calculatePriority(cost, cpa, totalValue, reasonCount) {
-  var priority = 0;
+  let priority = 0;
   
   // Maliyet ağırlığı
   priority += Math.min(cost / 100, 10) * 10;
@@ -328,21 +327,21 @@ function calculatePriority(cost, cpa, totalValue, reasonCount) {
 
 /* ---------- Paylaşılan listeyi güncelle (CASE-SENSITIVE) ---------- */
 function rebuildSharedNegList(terms, listName) {
-  var it = AdsApp.negativeKeywordLists()
+  const it = AdsApp.negativeKeywordLists()
            .withCondition('Name="' + listName.replace(/"/g, '\\"') + '"').get();
-  var list = it.hasNext() ? it.next()
+  const list = it.hasNext() ? it.next()
            : AdsApp.newNegativeKeywordListBuilder().withName(listName).build().getResult();
 
-  var removed = 0;
-  var iter = list.negativeKeywords().get();
+  let removed = 0;
+  const iter = list.negativeKeywords().get();
   while (iter.hasNext()) { 
     iter.next().remove(); 
     removed++; 
   }
 
-  var added = 0;
+  let added = 0;
   // Tüm yüksek riskli terimleri ekle (limit: 200)
-  var termsToAdd = terms.filter(t => t.riskLevel === 'HIGH').slice(0, 200);
+  const termsToAdd = terms.filter(t => t.riskLevel === 'HIGH').slice(0, 200);
   
   termsToAdd.forEach(function(termData) {
     try { 
@@ -360,8 +359,8 @@ function rebuildSharedNegList(terms, listName) {
 
 /* ---------- Gelişmiş HTML raporu (CASE-SENSITIVE) ---------- */
 function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
-  var summary = analysis.summary;
-  var dateStr = Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy HH:mm');
+  const summary = analysis.summary;
+  const dateStr = Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy HH:mm');
 
   function createBox(bg, border, content) {
     return '<div style="background:' + bg + ';padding:12px 14px;border-left:5px solid ' + border + ';margin:18px 0;">' + content + '</div>';
@@ -373,7 +372,7 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
            '<div style="font-size:20px;font-weight:600;color:' + color + '">' + value + '</div></td>';
   }
 
-  var html = '<html><body style="font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:0 auto;">' +
+  let html = '<html><body style="font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:0 auto;">' +
              '<h2 style="margin-top:0;">🎯 Negatif Kelime Raporu (CASE-SENSITIVE)</h2>' +
              '<p style="margin:4px 0 18px;color:#666;">' + dateStr + '</p>';
 
