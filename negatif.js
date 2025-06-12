@@ -26,6 +26,7 @@ function main() {
 
   const EMAIL_TO      = 'onurhanozer@gmail.com';
   const TEST_MODE     = false;
+  const DEBUG_AGGREGATION = false; // Veri birleştirme kontrolü
   const NEG_LIST_NAME = 'Script Liste';
 
   Logger.log('=== GELİŞMİŞ VERİMSİZLİK ANALİZİ BAŞLADI ===');
@@ -33,6 +34,10 @@ function main() {
   Logger.log('MOD: BÜYÜK/KÜÇÜK HARFE DUYARLI - Aynı kelimeler farklı yazımlarıyla ayrı analiz edilecek');
 
   const data = collectEnhancedData(DAYS_BACK, SALES_CONV_1, SALES_CONV_2, WHATSAPP_CONV);
+
+  if (DEBUG_AGGREGATION) {
+    validateAggregation(data);
+  }
   
   const analysis = performAdvancedAnalysis(data, {
     minCost: MIN_COST,
@@ -74,7 +79,7 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
            metrics.impressions
     FROM   search_term_view
     WHERE  segments.date BETWEEN '${s}' AND '${e}'
-      AND  segments.search_term_match_type = 'EXACT'
+      AND  segments.search_term_match_type IN ('EXACT','NEAR_EXACT')
       AND  metrics.impressions > 0`;
 
   const it1 = AdsApp.report(q1).rows();
@@ -131,7 +136,7 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
            metrics.conversions_value
     FROM   search_term_view
     WHERE  segments.date BETWEEN '${s}' AND '${e}'
-      AND  segments.search_term_match_type = 'EXACT'
+      AND  segments.search_term_match_type IN ('EXACT','NEAR_EXACT')
       AND  metrics.all_conversions > 0`;
 
   const it2 = AdsApp.report(q2).rows();
@@ -328,7 +333,7 @@ function calculatePriority(cost, cpa, totalValue, reasonCount) {
 /* ---------- Paylaşılan listeyi güncelle (CASE-SENSITIVE) ---------- */
 function rebuildSharedNegList(terms, listName) {
   const it = AdsApp.negativeKeywordLists()
-           .withCondition('Name="' + listName.replace(/"/g, '\\"') + '"').get();
+           .withCondition('Name = "' + listName.replace(/"/g, '\\"') + '"').get();
   const list = it.hasNext() ? it.next()
            : AdsApp.newNegativeKeywordListBuilder().withName(listName).build().getResult();
 
@@ -391,7 +396,7 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
        '<em>(' + listName + ')</em>');
 
   // Uyarı kutusu
-  html += createBox('#d4edda', '#198754', '<strong>✅ BÜYÜK/KÜÇÜK HARFE DUYARLI:</strong> Arama terimleri tam eşleşme ile analiz edildi.');
+  html += createBox('#d4edda', '#198754', '<strong>✅ BÜYÜK/KÜÇÜK HARFE DUYARLI:</strong> Arama terimleri tam eşleşme ve yakın varyasyonlarıyla analiz edildi.');
 
   // KPI tablosu
   html += '<table style="width:100%;border-collapse:collapse;background:#f8f9fa;border-radius:6px;margin-bottom:22px;"><tr>' +
@@ -476,7 +481,7 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
   }
 
   html += '<p style="margin-top:30px;padding:15px;background:#e9ecef;border-radius:5px;font-size:12px;color:#495057;">' +
-          '🔧 Script çalışma modu: BÜYÜK/KÜÇÜK HARFE DUYARLI - Arama terimleri tam eşleşme ile analiz edildi<br>' +
+          '🔧 Script çalışma modu: BÜYÜK/KÜÇÜK HARFE DUYARLI - Arama terimleri tam eşleşme ve yakın varyasyonlarıyla analiz edildi<br>' +
           '📊 Analiz aralığı: Son 60 gün | Min. maliyet: ₺50 | Max CPA: ₺400<br>' +
           '🔤 "iPhone" ve "iphone" farklı terimler olarak değerlendirildi<br>' +
           '⚙️ Negatif liste: "' + listName + '" | Rapor: ' + dateStr + '</p>' +
@@ -493,4 +498,26 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
   }
   
   Logger.log('Rapor hazırlandı. CASE-SENSITIVE - Verimsiz terim sayısı: ' + analysis.wastefulTerms.length);
+}
+
+/* ---------- Toplamları doğrulama (isteğe bağlı) ---------- */
+function validateAggregation(data) {
+  let allOk = true;
+  for (const termKey in data) {
+    const r = data[termKey];
+    let sumClicks = 0, sumCost = 0, sumImpr = 0;
+    for (const day in r.dailyStats) {
+      const d = r.dailyStats[day];
+      sumClicks += d.clicks;
+      sumCost += d.cost;
+      sumImpr += d.impressions;
+    }
+    if (sumClicks !== r.clicks || sumImpr !== r.impressions || Math.abs(sumCost - r.cost) > 0.01) {
+      Logger.log('[DEBUG] Toplam uyumsuz: ' + termKey + ' C:' + r.clicks + '/' + sumClicks + ' I:' + r.impressions + '/' + sumImpr + ' Cost:' + r.cost.toFixed(2) + '/' + sumCost.toFixed(2));
+      allOk = false;
+    }
+  }
+  if (allOk) {
+    Logger.log('[DEBUG] Günlük veriler ile toplamlar uyumlu.');
+  }
 }
