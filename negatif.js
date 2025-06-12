@@ -10,7 +10,7 @@ function main() {
   const DAYS_BACK              = 60;
   const MIN_COST               = 50.0;      // ₺ (daha düşük eşik)
   const MIN_CLICKS             = 10;        // Daha düşük eşik
-  const WHATSAPP_TO_SALE_RATIO = 10;        // 10 WA ≈ 1 satış
+  const WHATSAPP_TO_SALE_RATIO = 6;         // 6 WA ≈ 1 satış
   const MAX_CPA                = 400.0;     // ₺
   
   // Verimsizlik kriterleri
@@ -285,12 +285,18 @@ function performAdvancedAnalysis(data, config) {
   suspiciousTerms.sort((a, b) => b.cost - a.cost);
   successfulTerms.sort((a, b) => b.totalValue - a.totalValue);
 
+  const whatsappTerms = Object.keys(data).map(function(k) {
+    const r = data[k];
+    return { term: r.originalTerm, wa: r.wa, cost: r.cost };
+  }).sort(function(a, b) { return b.wa - a.wa; });
+
   const wastefulCost = wastefulTerms.reduce((sum, t) => sum + t.cost, 0);
 
   return {
     wastefulTerms: wastefulTerms,
     suspiciousTerms: suspiciousTerms,
     successfulTerms: successfulTerms,
+    topWhatsAppTerms: whatsappTerms.slice(0, 10),
     summary: {
       totalTerms: Object.keys(data).length,
       totalCost: totalCost,
@@ -418,7 +424,6 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     html += '<h3 style="margin:20px 0 8px;color:#dc3545;">🔴 Negatiflenecek Terimler (İlk 20)</h3>' +
             '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
             '<tr style="background:#dee2e6;"><th style="padding:8px;">Terim</th>' +
-            '<th style="padding:8px;text-align:center;">Kelime</th>' +
             '<th style="padding:8px;text-align:right;">Maliyet</th>' +
             '<th style="padding:8px;text-align:right;">Tık</th>' +
             '<th style="padding:8px;text-align:right;">CTR</th>' +
@@ -428,7 +433,6 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     analysis.wastefulTerms.slice(0, 20).forEach(function(w, i) {
       html += '<tr' + (i % 2 ? ' style="background:#f8f9fa;"' : '') + '>' +
               '<td style="padding:8px;max-width:200px;word-break:break-word;">' + w.term + '</td>' +
-              '<td style="padding:8px;text-align:center;">' + w.term.trim().split(/\s+/).length + '</td>' +
               '<td style="padding:8px;text-align:right;color:#dc3545;font-weight:600;">₺' + w.cost.toFixed(0) + '</td>' +
               '<td style="padding:8px;text-align:right;">' + w.clicks + '</td>' +
               '<td style="padding:8px;text-align:right;">%' + (w.ctr * 100).toFixed(2) + '</td>' +
@@ -443,14 +447,12 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     html += '<h3 style="margin:20px 0 8px;color:#fd7e14;">⚠️ Şüpheli Terimler (İlk 10)</h3>' +
             '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
             '<tr style="background:#dee2e6;"><th style="padding:8px;">Terim</th>' +
-            '<th style="padding:8px;text-align:center;">Kelime</th>' +
             '<th style="padding:8px;text-align:right;">Maliyet</th>' +
             '<th style="padding:8px;">Durum</th></tr>';
     
     analysis.suspiciousTerms.slice(0, 10).forEach(function(s, i) {
       html += '<tr' + (i % 2 ? ' style="background:#f8f9fa;"' : '') + '>' +
               '<td style="padding:8px;">' + s.term + '</td>' +
-                '<td style="padding:8px;text-align:center;">' + s.term.trim().split(/\s+/).length + '</td>' +
               '<td style="padding:8px;text-align:right;color:#fd7e14;">₺' + s.cost.toFixed(0) + '</td>' +
               '<td style="padding:8px;font-size:12px;">' + s.reasons.join(', ') + '</td></tr>';
     });
@@ -462,7 +464,6 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     html += '<h3 style="margin:20px 0 8px;color:#198754;">🟢 En Başarılı Terimler (İlk 10)</h3>' +
             '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
             '<tr style="background:#dee2e6;"><th style="padding:8px;">Terim</th>' +
-            '<th style="padding:8px;text-align:center;">Kelime</th>' +
             '<th style="padding:8px;text-align:right;">Satış</th>' +
             '<th style="padding:8px;text-align:right;">WhatsApp</th>' +
             '<th style="padding:8px;text-align:right;">CPA</th>' +
@@ -471,11 +472,27 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     analysis.successfulTerms.slice(0, 10).forEach(function(s, i) {
       html += '<tr' + (i % 2 ? ' style="background:#f8f9fa;"' : '') + '>' +
               '<td style="padding:8px;">' + s.term + '</td>' +
-                '<td style="padding:8px;text-align:center;">' + s.term.trim().split(/\s+/).length + '</td>' +
               '<td style="padding:8px;text-align:right;color:#198754;">' + s.sales.toFixed(1) + '</td>' +
               '<td style="padding:8px;text-align:right;color:#fd7e14;">' + s.wa.toFixed(1) + '</td>' +
               '<td style="padding:8px;text-align:right;">₺' + (s.cpa || 0).toFixed(0) + '</td>' +
               '<td style="padding:8px;text-align:right;">' + s.roas.toFixed(2) + '</td></tr>';
+    });
+    html += '</table>';
+  }
+
+  // WhatsApp odaklı terimler
+  if (analysis.topWhatsAppTerms && analysis.topWhatsAppTerms.length > 0) {
+    html += '<h3 style="margin:20px 0 8px;color:#25d366;">\uD83D\uDCAC En Çok WhatsApp Alan Terimler (İlk 10)</h3>' +
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+            '<tr style="background:#dee2e6;"><th style="padding:8px;">Terim</th>' +
+            '<th style="padding:8px;text-align:right;">WhatsApp</th>' +
+            '<th style="padding:8px;text-align:right;">Maliyet</th></tr>';
+
+    analysis.topWhatsAppTerms.forEach(function(w, i) {
+      html += '<tr' + (i % 2 ? ' style="background:#f8f9fa;"' : '') + '>' +
+              '<td style="padding:8px;">' + w.term + '</td>' +
+              '<td style="padding:8px;text-align:right;color:#25d366;">' + w.wa.toFixed(1) + '</td>' +
+              '<td style="padding:8px;text-align:right;">₺' + w.cost.toFixed(0) + '</td></tr>';
     });
     html += '</table>';
   }
