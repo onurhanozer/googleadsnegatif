@@ -74,7 +74,7 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
            metrics.impressions
     FROM   search_term_view
     WHERE  segments.date BETWEEN '${s}' AND '${e}'
-      AND  segments.search_term_match_type = 'EXACT'
+      AND  segments.search_term_match_type IN ('EXACT','NEAR_EXACT')
       AND  metrics.impressions > 0`;
 
   const it1 = AdsApp.report(q1).rows();
@@ -131,7 +131,7 @@ function collectEnhancedData(daysBack, conv1, conv2, waConv) {
            metrics.conversions_value
     FROM   search_term_view
     WHERE  segments.date BETWEEN '${s}' AND '${e}'
-      AND  segments.search_term_match_type = 'EXACT'
+      AND  segments.search_term_match_type IN ('EXACT','NEAR_EXACT')
       AND  metrics.all_conversions > 0`;
 
   const it2 = AdsApp.report(q2).rows();
@@ -391,7 +391,7 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
        '<em>(' + listName + ')</em>');
 
   // Uyarı kutusu
-  html += createBox('#d4edda', '#198754', '<strong>✅ BÜYÜK/KÜÇÜK HARFE DUYARLI:</strong> Arama terimleri tam eşleşme ile analiz edildi.');
+  html += createBox('#d4edda', '#198754', '<strong>✅ BÜYÜK/KÜÇÜK HARFE DUYARLI:</strong> Arama terimleri tam eşleşme ve yakın varyasyonlarıyla analiz edildi.');
 
   // KPI tablosu
   html += '<table style="width:100%;border-collapse:collapse;background:#f8f9fa;border-radius:6px;margin-bottom:22px;"><tr>' +
@@ -476,7 +476,7 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
   }
 
   html += '<p style="margin-top:30px;padding:15px;background:#e9ecef;border-radius:5px;font-size:12px;color:#495057;">' +
-          '🔧 Script çalışma modu: BÜYÜK/KÜÇÜK HARFE DUYARLI - Arama terimleri tam eşleşme ile analiz edildi<br>' +
+          '🔧 Script çalışma modu: BÜYÜK/KÜÇÜK HARFE DUYARLI - Arama terimleri tam eşleşme ve yakın varyasyonlarıyla analiz edildi<br>' +
           '📊 Analiz aralığı: Son 60 gün | Min. maliyet: ₺50 | Max CPA: ₺400<br>' +
           '🔤 "iPhone" ve "iphone" farklı terimler olarak değerlendirildi<br>' +
           '⚙️ Negatif liste: "' + listName + '" | Rapor: ' + dateStr + '</p>' +

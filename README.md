@@ -8,7 +8,7 @@ This repository contains a single Google Ads Script (`negatif.js`) that automati
 3. Review the configuration constants at the top of the `main` function and adjust if necessary.
 4. Authorize and run the script, or schedule it to run periodically.
 
-The script is case-sensitive; the terms "iphone" and "iPhone" are treated as different queries. A shared negative keyword list named `Script Liste` is created or replaced each run.
+The script is case-sensitive; the terms "iphone" and "iPhone" are treated as different queries. It now looks at both exact matches and their close variants. A shared negative keyword list named `Script Liste` is created or replaced each run.
 
 ## License
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
