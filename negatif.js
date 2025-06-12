@@ -333,7 +333,7 @@ function calculatePriority(cost, cpa, totalValue, reasonCount) {
 /* ---------- Paylaşılan listeyi güncelle (CASE-SENSITIVE) ---------- */
 function rebuildSharedNegList(terms, listName) {
   const it = AdsApp.negativeKeywordLists()
-           .withCondition('Name="' + listName.replace(/"/g, '\\"') + '"').get();
+           .withCondition('Name = "' + listName.replace(/"/g, '\\"') + '"').get();
   const list = it.hasNext() ? it.next()
            : AdsApp.newNegativeKeywordListBuilder().withName(listName).build().getResult();
 
