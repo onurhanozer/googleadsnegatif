@@ -413,15 +413,17 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     html += '<h3 style="margin:20px 0 8px;color:#dc3545;">🔴 Negatiflenecek Terimler (İlk 20)</h3>' +
             '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
             '<tr style="background:#dee2e6;"><th style="padding:8px;">Terim</th>' +
+            '<th style="padding:8px;text-align:center;">Kelime</th>' +
             '<th style="padding:8px;text-align:right;">Maliyet</th>' +
             '<th style="padding:8px;text-align:right;">Tık</th>' +
             '<th style="padding:8px;text-align:right;">CTR</th>' +
             '<th style="padding:8px;text-align:right;">CPC</th>' +
-            '<th style="padding:8px;">Sorunlar</th></tr>';
+            '<th style="padding:8px;text-align:left;">Sorunlar</th></tr>';
     
     analysis.wastefulTerms.slice(0, 20).forEach(function(w, i) {
       html += '<tr' + (i % 2 ? ' style="background:#f8f9fa;"' : '') + '>' +
               '<td style="padding:8px;max-width:200px;word-break:break-word;">' + w.term + '</td>' +
+              '<td style="padding:8px;text-align:center;">' + w.term.trim().split(/\s+/).length + '</td>' +
               '<td style="padding:8px;text-align:right;color:#dc3545;font-weight:600;">₺' + w.cost.toFixed(0) + '</td>' +
               '<td style="padding:8px;text-align:right;">' + w.clicks + '</td>' +
               '<td style="padding:8px;text-align:right;">%' + (w.ctr * 100).toFixed(2) + '</td>' +
@@ -436,12 +438,14 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     html += '<h3 style="margin:20px 0 8px;color:#fd7e14;">⚠️ Şüpheli Terimler (İlk 10)</h3>' +
             '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
             '<tr style="background:#dee2e6;"><th style="padding:8px;">Terim</th>' +
+            '<th style="padding:8px;text-align:center;">Kelime</th>' +
             '<th style="padding:8px;text-align:right;">Maliyet</th>' +
             '<th style="padding:8px;">Durum</th></tr>';
     
     analysis.suspiciousTerms.slice(0, 10).forEach(function(s, i) {
       html += '<tr' + (i % 2 ? ' style="background:#f8f9fa;"' : '') + '>' +
               '<td style="padding:8px;">' + s.term + '</td>' +
+                '<td style="padding:8px;text-align:center;">' + s.term.trim().split(/\s+/).length + '</td>' +
               '<td style="padding:8px;text-align:right;color:#fd7e14;">₺' + s.cost.toFixed(0) + '</td>' +
               '<td style="padding:8px;font-size:12px;">' + s.reasons.join(', ') + '</td></tr>';
     });
@@ -453,6 +457,7 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     html += '<h3 style="margin:20px 0 8px;color:#198754;">🟢 En Başarılı Terimler (İlk 10)</h3>' +
             '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
             '<tr style="background:#dee2e6;"><th style="padding:8px;">Terim</th>' +
+            '<th style="padding:8px;text-align:center;">Kelime</th>' +
             '<th style="padding:8px;text-align:right;">Satış</th>' +
             '<th style="padding:8px;text-align:right;">WhatsApp</th>' +
             '<th style="padding:8px;text-align:right;">CPA</th>' +
@@ -461,6 +466,7 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
     analysis.successfulTerms.slice(0, 10).forEach(function(s, i) {
       html += '<tr' + (i % 2 ? ' style="background:#f8f9fa;"' : '') + '>' +
               '<td style="padding:8px;">' + s.term + '</td>' +
+                '<td style="padding:8px;text-align:center;">' + s.term.trim().split(/\s+/).length + '</td>' +
               '<td style="padding:8px;text-align:right;color:#198754;">' + s.sales.toFixed(1) + '</td>' +
               '<td style="padding:8px;text-align:right;color:#fd7e14;">' + s.wa.toFixed(1) + '</td>' +
               '<td style="padding:8px;text-align:right;">₺' + (s.cpa || 0).toFixed(0) + '</td>' +
