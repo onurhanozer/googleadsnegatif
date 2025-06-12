@@ -372,8 +372,14 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
            '<div style="font-size:20px;font-weight:600;color:' + color + '">' + value + '</div></td>';
   }
 
+  function createHeader(title) {
+    return '<div style="background:linear-gradient(90deg,#0d6efd,#6610f2);padding:16px 24px;border-radius:6px;margin-bottom:20px;color:#fff;">' +
+           '<h2 style="margin:0;font-size:22px;">' + title + '</h2>' +
+           '</div>';
+  }
+
   let html = '<html><body style="font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:0 auto;">' +
-             '<h2 style="margin-top:0;">🎯 Negatif Kelime Raporu (CASE-SENSITIVE)</h2>' +
+             createHeader('🎯 Negatif Kelime Raporu (CASE-SENSITIVE)') +
              '<p style="margin:4px 0 18px;color:#666;">' + dateStr + '</p>';
 
   // Durum kutusu
@@ -394,6 +400,12 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
           createKPI('WhatsApp Lead', summary.totalWhatsApp.toFixed(0), '#fd7e14') +
           createKPI('Tasarruf', '₺' + summary.potentialSavings.toFixed(0), '#dc3545') +
           createKPI('Ort. CPC', '₺' + summary.avgCPC.toFixed(2), '#6f42c1') +
+          '</tr><tr>' +
+          createKPI('Toplam Terim', summary.totalTerms, '#6c757d') +
+          createKPI('Negatiflenen', summary.wastefulCount, '#dc3545') +
+          createKPI('Şüpheli', summary.suspiciousCount, '#fd7e14') +
+          createKPI('Başarılı', summary.successfulCount, '#198754') +
+          createKPI('Ort. CTR', (summary.avgCTR * 100).toFixed(2) + '%', '#0d6efd') +
           '</tr></table>';
 
   // Verimsiz terimler
@@ -461,7 +473,8 @@ function sendEnhancedReport(analysis, emailTo, testMode, sync, listName) {
           '🔧 Script çalışma modu: BÜYÜK/KÜÇÜK HARFE DUYARLI - Arama terimleri tam eşleşme ile analiz edildi<br>' +
           '📊 Analiz aralığı: Son 60 gün | Min. maliyet: ₺50 | Max CPA: ₺400<br>' +
           '🔤 "iPhone" ve "iphone" farklı terimler olarak değerlendirildi<br>' +
-          '⚙️ Negatif liste: "' + listName + '" | Rapor: ' + dateStr + '</p>';
+          '⚙️ Negatif liste: "' + listName + '" | Rapor: ' + dateStr + '</p>' +
+          '<p style="margin-top:10px;font-size:12px;color:#6c757d;">Bu rapor özet niteliğindedir. Detaylı veriler Google Ads arayüzünden incelenebilir.</p>';
 
   html += '</body></html>';
 
